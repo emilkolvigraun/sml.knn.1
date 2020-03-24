@@ -27,6 +27,8 @@ class KNN:
 
     def __init__(self, log:bool=True):
         self.log_level = log
+        self.test_data = None
+        self.train_data = None
 
     def log(self, tag, msg, nl=False):
         if nl:
@@ -64,6 +66,14 @@ class KNN:
 
         return test_accuracy, test_time, fit_time
 
+    def assign_test_data(self, filename:str, drop:list=[]):
+        self.log('assigned testing data', filename)
+        self.test_data = self.load_data(filename, drop)
+
+    def assign_train_data(self, filename:str, drop:list=[]):
+        self.log('assigned training data', filename)
+        self.train_data = self.load_data(filename, drop)
+
     def train(self, x, y, train, k):
         
         from sklearn.neighbors import KNeighborsClassifier
@@ -88,9 +98,9 @@ class KNN:
         return train_accuracy, train_time, fit_time
 
     def algorithm(self, x, y, train, test, k):
-        train_accuracy, train_time, fit_time_train = self.train(x, y, train, k)
+        #train_accuracy, train_time, fit_time_train = self.train(x, y, train, k)
         test_accuracy, test_time, fit_time_test = self.test(x, y, train, test, k)
-        return KNNResponse(train_accuracy, test_accuracy, train_time, test_time, (fit_time_test+fit_time_train)/2)
+        return KNNResponse(0, test_accuracy, test_time, 0, fit_time_test)
 
     def load_data(self, filename:str, drop:list):
         return pandas.read_csv(filename).drop(columns=drop)
@@ -114,14 +124,23 @@ class KNN:
             self.log('starting knn on', filename, True)
 
         # load the dataset
-        data = self.load_data(filename, drop)
+        if filename is not None:
+            data = self.load_data(filename, drop)
+        elif filename is None and self.train_data is not None:
+            data = self.train_data
 
         # randomize indexes and calculate the test sixes
         shuffle, test_size = self.test_slice_shuffle(data, test_size)
 
         # declare test and training set
-        test = data.loc[shuffle[1:test_size]]
-        train = data.loc[shuffle[test_size:]]
+        if self.test_data is None and filename is not None:
+            test = data.loc[shuffle[1:test_size]]
+        elif self.test_data is not None and filename is None:
+            test = self.test_data.loc[shuffle[1:test_size]]
+        if self.train_data is None and filename is not None:
+            train = data.loc[shuffle[test_size:]]
+        elif self.train_data is not None and filename is None:
+            train = self.train_data.loc[shuffle[test_size:]]
 
         # the columns we are making the prediction with
         x = self.get_predict_data(data)

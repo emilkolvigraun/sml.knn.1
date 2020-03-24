@@ -1,6 +1,6 @@
 import pandas
 
-from knn import KNNResponse, CrossResponse
+from _ml import KNNResponse, CrossResponse
 
 class Processor:
 
@@ -22,7 +22,8 @@ class Processor:
                 self.cross['std'].append(response.std)
                 self.cross['time'].append(response.time)
                 self.cross['k'].append(k)
-    def print(self):
+
+    def pprint(self):
         print('\nKNN data:')
         print(pandas.DataFrame.from_dict(self.knn))
         print('\nCross Validation data:')
@@ -54,6 +55,7 @@ class Processor:
     def generate_plot(self):
         import pandas, matplotlib.pyplot as plt, matplotlib.pylab as pylab
         from matplotlib.backends.backend_pdf import PdfPages
+        import numpy
 
         params = {'axes.labelsize':'large'}
         pylab.rcParams.update(params)
@@ -66,26 +68,60 @@ class Processor:
                 df = pandas.DataFrame.from_dict(self.knn)
                 res = 'test_result'
                 t = 'test_time'
-            elif extention == '_cval':
+            elif extention == '__cval':
                 df= pandas.DataFrame.from_dict(self.cross)
                 res = 'mean'
                 t = 'time'
 
             fig, ax1 = plt.subplots()
 
-            ax1.plot(df['k'], df[res]*100, c=accuracy_col)
+            ax1.plot(df['k'][:-1], df[res][1:]*100, c=accuracy_col)
             ax1.tick_params(axis='y', labelcolor=accuracy_col)
             ax1.set_ylabel("[Accuracy %]", color=accuracy_col)
             ax1.xaxis.grid()
 
             ax2 = ax1.twinx()
-            ax2.plot(df['k'], df[t], c=time_col)
+            ax2.plot(df['k'][:-1], df[t][1:], c=time_col)
             ax2.tick_params(axis='y', labelcolor=time_col)
             ax2.set_ylabel("[Computational Time ms]", color=time_col, )
             ax1.set_xlabel("K-value")
 
             plt.tight_layout()
-            pp = PdfPages(self.filename+extention+'.pdf') 
+            pp = PdfPages('results/'+self.filename+extention+'.pdf') 
+            plt.savefig(pp, format='pdf', bbox_inches="tight") #
+            pp.close()
+            plt.close()
+        
+        if len(self.knn['test_time']) > 0:
+            test_time = numpy.array(self.knn['test_time'])
+            training_time = numpy.array(self.knn['training_time'])
+            test_result = numpy.array(self.knn['test_result'])
+            train_result = numpy.array(self.knn['train_result'])
+
+            plt.bar(['mean test', 'mean train'], [numpy.mean(test_time), numpy.mean(training_time)])
+            plt.ylabel('[Computation Time ms]')
+            pp = PdfPages('results/'+'knn_time_mean_bar.pdf') 
+            plt.savefig(pp, format='pdf', bbox_inches="tight") #
+            pp.close()
+            plt.close()
+
+            plt.bar(['mean test', 'mean train'], [numpy.mean(test_result), numpy.mean(train_result)])
+            plt.ylabel('[Accuracy %]')
+            pp = PdfPages('results/'+'knn_result_mean_bar.pdf') 
+            plt.savefig(pp, format='pdf', bbox_inches="tight") #
+            pp.close()
+            plt.close()
+           
+            plt.bar(['STD test', 'STD train'], [numpy.std(test_time), numpy.std(training_time)])
+            plt.ylabel('[Computation Time ms]')
+            pp = PdfPages('results/'+'knn_time_std_bar.pdf') 
+            plt.savefig(pp, format='pdf', bbox_inches="tight") #
+            pp.close()
+            plt.close()
+
+            plt.bar(['STD test', 'STD train'], [numpy.std(test_result), numpy.std(train_result)])
+            plt.ylabel('[Accuracy %]')
+            pp = PdfPages('results/'+'knn_result_std_bar.pdf') 
             plt.savefig(pp, format='pdf', bbox_inches="tight") #
             pp.close()
             plt.close()

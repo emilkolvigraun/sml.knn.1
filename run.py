@@ -8,10 +8,10 @@ def print_performance():
     print(cross)
 
 # defining filename
-fnm = 'data/id_1p.csv'
+fnm = 'data/id_10p.csv'
 
 # declaring processor
-pro = Processor('results/plot')
+pro = Processor('90_10_results_10p_full')
 
 # starting engine
 obj = KNN(log=True)
@@ -20,11 +20,14 @@ cvl = obj.cross_validation
 
 # from k=1 to k=99 execute knn and cross validation
 for i in range(100):
-    pro.add(knn(filename=fnm, test_size=0.1, k=i, drop=['index']), i)
-    # pro.add(cvl(filename=fnm, cv=10, k=i, drop=['index']), i)
+    pro.add(knn(filename=fnm, test_size=0.2, k=i, drop=[]), i)
+    # pro.add(knn(filename=fnm, test_size=0.5, k=i, drop=[]), i)
+    if i > 0 and i < 11:
+        pro.add(cvl(filename=fnm, cv=10, k=5, drop=[]), 5)
+# print(cvr)
 
 # pretty prints content
-pro.print()
+# pro.pprint()
 
 # calculate performance metrics
 training, test, cross = pro.calculate_performance()
